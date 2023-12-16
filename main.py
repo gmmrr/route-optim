@@ -23,16 +23,6 @@ if __name__ == '__main__':
 
     # 02 Configure network variables
     # -------------------
-    # 2x3 Traffic Network, for testing
-    # [A, B, C, D, E, F, G, H, I, J, K, L, M, N]
-    # -------------------
-    # network_file = './network_files/2x3_network.net.xml'
-    # congestion = [("gneF_I", 10), ("gneI_F", 10), ("gneB_E", 20), ("gneE_B", 20), ("gneJ_M", 30), ("gneM_J", 30)]
-    # traffic_light = [("B", 5), ("I", 5), ("G", 5)]
-    # start_node = "A"
-    # end_node = "N"
-
-    # -------------------
     # Sunway City Traffic Network
     # [101: Sunway University, 102: Monash University,  103: Sunway Geo,
     #  104: Sunway Medical,    105: Taylors University, 106: Sunway Pyramid,
@@ -59,7 +49,7 @@ if __name__ == '__main__':
 
     # 04 Activate Agent
     # -------------------
-    # Dijkstra Algorithm, as a reference
+    # Dijkstra Algorithm
     # -------------------
     print(f"\nDijkstra Algorithm{'.' * 100}")
     Dijkstra = dijkstra.Dijkstra(env, start_node, end_node)
