@@ -13,9 +13,9 @@ class traffic_env:
         self.net = sumolib.net.readNet(network_file)  # file -> net
         self.nodes = [node.getID().upper() for node in self.net.getNodes()]  # net -> nodes
         self.edges = [edge.getID() for edge in self.net.getEdges()]  # net -> edges
-        self.action_space = [0, 1, 2, 3]  # action_space
+        self.action_space = [0, 1, 2, 3]  #  0 Right, 1 Up, 2 Left, 3 Down, so note that each junction has less than 4 exit in this case
         self.state_space = self.nodes  # state_space
-        self.edge_label = self.decode_edges_to_label()  # edge_label = decode_edges_to_label()
+        self.edge_label = self.decode_edges_to_label()  # give every edges a label by their direction in the aspect of x-y coordinate
 
         # 2. Define congestions edges with its original pattern [("gneF_I", 10), ...]
         if congestion:  # if congestion is defined
@@ -41,7 +41,7 @@ class traffic_env:
             print(f'Num of Congested/All Edges: {len(self.congested_edges)}/{len(self.edges)}')
 
         # 3. Define traffic lights nodes, with the original pattern [ (["B", "C"], 5), ...]
-        self.tl_nodes = [item[0] for item in traffic_light]  # ["B", "C"] is a list of nodes, that means if you meet a traffic light at B, you won't meet it at C again
+        self.tl_nodes = [item[0] for item in traffic_light]  # ["B", "C"] is a list of nodes. if you meet a traffic light at B, you won't meet another one at C again
         self.tl_duration = [item[1] for item in traffic_light] # 5 is the duration
 
         for nodes_lst in self.tl_nodes:  # just to make sure if tl_nodes are defined in the net
@@ -122,7 +122,7 @@ class traffic_env:
         return edges
 
 
-    # Label edges based of junction from (Right -> Up -> Left -> Down)
+    # Label edges based of junction from ( 0 Right -> 1 Up -> 2 Left -> 3 Down )
     def decode_edges_to_label(self):
         """
         Iterates through the whole state space and returns a dictionary of each state and the direction it is headed.
@@ -134,22 +134,26 @@ class traffic_env:
         edge_labelled = {edge: None for edge in self.edges}
 
         def get_edge_label(node, outgoing_edges):
-            # store edge angle
-            edge_angle = []
-
             # get the nodes outgoing
             start_x, start_y = self.net.getNode(node).getCoord()
 
-            # get outgoing edges
+            # store edge angle
+            edge_angle = []
+
+            # through each outgoing edge
             for edge in outgoing_edges:
+                # get the end node of the edge
                 end_node = self.decode_edge_to_node(edge)
                 end_x, end_y = self.net.getNode(end_node).getCoord()
 
-                x_diff = end_x - start_x
-                y_diff = end_y - start_y
+                # get the delta_x and delta_y
+                delta_x = end_x - start_x
+                delta_y = end_y - start_y
 
-                # get their angle
-                angle = math.degrees(math.atan2(y_diff, x_diff))
+                # get the angle by delta_x and delta_y
+                angle = math.degrees(math.atan2(delta_y, delta_x))
+
+                # save the edge and its corresponding angle
                 edge_angle.append((edge, angle))
 
             # sort from 0 to 180 to -180 to 0 (Right -> Up -> Left -> Down -> Right)
@@ -157,13 +161,14 @@ class traffic_env:
 
             # label edges
             for i in range(len(edge_angle)):
-                edge_labelled[edge_angle[i][0]] = i
+                edge_labelled[edge_angle[i][0]] = i  # edge_angle[i][0] is the ordered edge, btw [1] is its angle
 
         for node in self.nodes:
             outgoing_edges = self.decode_node_to_edges(node, 'outgoing')
             if outgoing_edges:
                 get_edge_label(node, outgoing_edges)
-        return edge_labelled
+
+        return edge_labelled  # note that two edges in opposite directions have different ID (viewed as different edges)
 
 
     # Find the actions from a given edges
@@ -181,7 +186,7 @@ class traffic_env:
         # Check if edges is in the edges list
         for edge in edges:
             if edge not in self.edges:
-                sys.exit(f'Error: Edge {edge} not in Edges Space!')
+                sys.exit(f'Error: Edge {edge} not in Edges Space')
 
         # Get the label of each edge
         edge_label = self.edge_label
@@ -194,13 +199,13 @@ class traffic_env:
         return actions_lst
 
 
-    # Find the edge from a given edge and action
+    # Find the correspoding edge by given an edge set from a node and action
     def decode_edges_action_to_edge(self, edges, action):
         """
         Compute the new edge from a given edges and action taken.
 
         Args:
-        - edges (list): The list of edges to be translated
+        - edges (list): The list of edges to be translated, they should be from a same node
         - action (int): The action taken
 
         Returns:
@@ -210,7 +215,7 @@ class traffic_env:
         # Check if edges is in the edges list
         for edge in edges:
             if edge not in self.edges:
-                sys.exit(f'Error: Edge {edge} not in Edges Space!')
+                sys.exit(f'Error: Edge {edge} not in Edges Space')
 
         # Get the direction of each edge
         edge_label = self.edge_label
@@ -251,7 +256,7 @@ class traffic_env:
         return node
 
 
-    # Find the total distance travelled from a given pathway of nodes
+    # Find the total distance travelled by giving a single edge / an edge_path
     def get_edge_distance(self, travel_edges):
         """
         Calculates the cost (distance travelled) through the selected path
@@ -278,7 +283,7 @@ class traffic_env:
         return total_distance
 
 
-    # Find the total time taken from a given pathway of nodes and edges
+    # Find the total time taken by giving a single edge / an edge_path
     def get_edge_time(self, travel_edges):
         """
         Calculates the cost function (time taken) through the select pathway/route
@@ -359,6 +364,7 @@ class traffic_env:
             route_G, pos, with_labels=False,
             node_color='SeaGreen', node_size=30,
             edge_color='MediumSeaGreen', width=3,
+
             arrows=True, arrowsize=7, arrowstyle='-|>'
         )
 
@@ -389,21 +395,20 @@ class traffic_env:
         Plotting of models' performance
 
         Args:
-        - num_episodes (int): number of episodes it took for the model to converge.
-        - logs (dict): the logs of the edges and states it took to converge.
+        - num_episodes (int): number of episodes it took for the model to converge, a trimmed one
+        - logs (dict): the logs of the edges and states it took to converge
 
         Return:
         - Plot of the evaluation (time/distance) at each episode
         """
 
+        plt.title("Performance of Agent")
+        plt.xlabel("Episode")
         if self.evaluation in ("time"):
             plt.ylabel("Time")
             evaluation = [self.get_edge_time(logs[episode][1]) for episode in range(num_episodes)]
         else:
             plt.ylabel("Distance")
             evaluation = [self.get_edge_distance(logs[episode][1]) for episode in range(num_episodes)]
-
         plt.plot(range(num_episodes), evaluation)
-        plt.xlabel("Episode")
         plt.show()
-        plt.title("Performance of Agent")

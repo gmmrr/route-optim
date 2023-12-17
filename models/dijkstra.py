@@ -68,9 +68,10 @@ class Dijkstra:
         time_difference = end_time - start_time
         processing_seconds = time_difference.total_seconds()  # get second rather than timedelta object
 
-        # Print out results
+        # --- results output ---
         print('Search Completed...\n')
-        print(f'-- States: {node_path} \n-- Edges: {edge_path}')  # states is nodes actually
+        print(f'-- States: {node_path}')
+        print(f'-- Edges: {edge_path}')  # states is nodes actually
         print(f'-- Processing Time: {processing_seconds} seconds')
 
         if self.env.evaluation in ("time"):
