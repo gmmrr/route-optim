@@ -75,7 +75,7 @@ class Dijkstra:
         print(f'-- Processing Time: {processing_seconds} seconds')
 
         if self.env.evaluation in ("time"):
-            print(f'-- Travelled Time: {round(self.env.get_edge_time(edge_path), 2)} mins')
+            print(f'-- Travelled Time: {round(self.env.get_edge_time(edge_path)/60, 2)} mins')
         else:  # in ("distance")
             print(f'-- Travelled Distance: {round(self.env.get_edge_distance(edge_path), 2)} m')
 

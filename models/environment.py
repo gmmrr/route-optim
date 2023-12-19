@@ -7,13 +7,13 @@ import random
 
 
 class traffic_env:
-    def __init__ (self, network_file, congestion = [], traffic_light = [], evaluation = "", congestion_level = "", travel_speed=80):
+    def __init__ (self, network_file, congestion = [], traffic_light = [], evaluation = "", congestion_level = ""):
         # 1. Define network_file
         self.network_file = network_file  # read the file
         self.net = sumolib.net.readNet(network_file)  # file -> net
         self.nodes = [node.getID().upper() for node in self.net.getNodes()]  # net -> nodes
         self.edges = [edge.getID() for edge in self.net.getEdges()]  # net -> edges
-        self.action_space = [0, 1, 2, 3]  #  0 Right, 1 Up, 2 Left, 3 Down, so note that each junction has less than 4 exit in this case
+        self.action_space = [i for i in range(100)]  # action_space
         self.state_space = self.nodes  # state_space
         self.edge_label = self.decode_edges_to_label()  # give every edges a label by their direction in the aspect of x-y coordinate
 
@@ -28,15 +28,15 @@ class traffic_env:
             print(f'Traffic Congestion: {list(zip(self.congested_edges, self.congestion_duration))}')
             print(f'Num of Congested/All Edges: {len(self.congested_edges)}/{len(self.edges)}')
 
-        else:  # if congestion is not defined, then randomly choose edges and its duration
+        else:  # if congestion is not defined, then set edges and its duration randomly
             if congestion_level == "low":
-                traffic_level = 0.05
+                traffic_level = 0.05  # 5% congested
             elif congestion_level == "medium":
-                traffic_level = 0.10
+                traffic_level = 0.10  # 10% congested
             elif congestion_level == "high":
-                traffic_level = 0.20
+                traffic_level = 0.20  # 20% congested
             self.congested_edges = random.sample(self.edges, round(len(self.edges) * traffic_level))
-            self.congestion_duration = [random.randint(10, 20) for _ in range(len(self.congested_edges))]
+            self.congestion_duration = [random.randint(60, 120) for _ in range(len(self.congested_edges))]  # 1~2 min
             print(f'Traffic Congestion: {list(zip(self.congested_edges, self.congestion_duration))}')
             print(f'Num of Congested/All Edges: {len(self.congested_edges)}/{len(self.edges)}')
 
@@ -56,9 +56,6 @@ class traffic_env:
         if evaluation not in ('distance', 'time'):
             sys.exit('Error: Invalid evaluation type, provide only "distance" or "time"')
         self.evaluation = evaluation
-
-        # 5. Define travel speed
-        self.travel_speed = travel_speed
 
 
     # Set starting and ending nodes
@@ -276,7 +273,7 @@ class traffic_env:
         for edge in travel_edges:
             # Check if edges are in the edges list
             if edge not in self.edges:
-                sys.exit(f'Error: Edge {edge} not in Edges Space!')
+                sys.exit(f'Error: Edge {edge} not in Edges Space ...call by get_edge_distance')
             # Sum up the distance of each edges
             total_distance += self.net.getEdge(edge).getLength()
 
@@ -290,18 +287,28 @@ class traffic_env:
 
         Args:
         - travel_edges: The list of edges of the selected route.
-        - speed: The speed travel (constant) km/h
-        - congestion_duration: The time taken for stuck in congestion (in minutes)
-        - traffic_light_duration: The time taken for stuck in traffic light (in minutes)
+        - speed: The speed travel (constant) m/s
+        - congestion_duration: The time taken for stuck in congestion (in seconds)
 
+        - traffic_light_duration: The time taken for stuck in traffic light (in seconds)
         Return:
-        - total_time (float): The total time taken to travel (in minutes)
+        - total_time (float): The total time taken to travel (in seconds)
         """
-
-        total_time = ((self.get_edge_distance(travel_edges)/1000) / self.travel_speed) * 60 # km / (km/h) -> hrs -> mins
 
         if isinstance(travel_edges, str):
             travel_edges = [travel_edges]
+
+        total_time = 0
+        for edge in travel_edges:
+            # Check if edges are in the edges list
+            if edge not in self.edges:
+                sys.exit(f'Error: Edge {edge} not in Edges Space ...call by get_edge_distance')
+            # Sum up the distance of each edges
+            total_time += self.net.getEdge(edge).getLength() / self.net.getEdge(edge).getSpeed()
+            print(f'...Length: {round(self.net.getEdge(edge).getLength(),2)} m')
+            print(f'...Speed:  {round(self.net.getEdge(edge).getSpeed(), 2)} m/s -> {round(self.net.getEdge(edge).getSpeed()*3.6, 2)} km/h')
+
+
 
         # time punishment for the route
         for i in range(len(travel_edges)):  # time punishment on a specific edge

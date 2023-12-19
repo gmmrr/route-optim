@@ -1,0 +1,1 @@
+netconvert -s osm.net.xml.gz -o 2.net.xml --geometry.min-radius.fix.railways=false --geometry.max-grade.fix=false --offset.disable-normalization=true --lefthand=0 --no-turnarounds=true --junctions.corner-detail=5 --junctions.limit-turn-speed=5.5 --rectangular-lane-cut=0 --walkingareas=0 --flatten=true --plain-output.lanes=true --speed-in-kmh=true

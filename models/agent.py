@@ -129,6 +129,7 @@ class rl_agent():
     def train(self, num_episodes, threshold):
         start_time = datetime.datetime.now() # record the start time
         self.reset()  # initialise agent
+        print('Training Start...')
 
         # Iterate through episodes
         for episode in range(num_episodes):
@@ -178,7 +179,7 @@ class rl_agent():
                     print(f'-- Processing Time: {processing_seconds} seconds')
 
                     if self.env.evaluation in ("time"):
-                        print(f'-- Travelled Time: {round(self.env.get_edge_time(self.logs[episode][1]), 2)} mins')
+                        print(f'-- Travelled Time: {round(self.env.get_edge_time(self.logs[episode][1])/60, 2)} mins')
                     else:
                         print(f'-- Travelled Distance: {round(self.env.get_edge_distance(self.logs[episode][1]), 2)} m')
 
