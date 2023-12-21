@@ -60,8 +60,8 @@ class Dijkstra:
         node_path.reverse()
 
         for index in range(len(node_path)-1):
-            temp_edge = set(self.env.decode_node_to_edges(node_path[index], "outgoing")) & set(self.env.decode_node_to_edges(node_path[index+1], "incoming")) # find the edge between two nodes by knowing their set
-            edge_path.append(next(iter(temp_edge)))  # temp_edge is a set of elements (only one element here), so use it to get the element rather than the set by change it into iterator and get the next one because of its unordered prop
+            intersect_edge = set(self.env.decode_node_to_edges(node_path[index], "outgoing")) & set(self.env.decode_node_to_edges(node_path[index+1], "incoming")) # find the edge between two nodes by knowing their set
+            edge_path.append(next(iter(intersect_edge)))  # temp_edge is a set of elements (only one element here), so use it to get the element rather than the set by change it into iterator and get the next one because of its unordered prop
 
         # time the search process
         end_time = datetime.datetime.now()
@@ -75,7 +75,7 @@ class Dijkstra:
         print(f'-- Processing Time: {processing_seconds} seconds')
 
         if self.env.evaluation in ("time"):
-            print(f'-- Travelled Time: {round(self.env.get_edge_time(edge_path)/60, 2)} mins')
+            print(f'-- Travelled Time: {round(( self.env.get_edge_time(edge_path) + self.env.get_tl_offset(edge_path) )/60, 2)} mins')
         else:  # in ("distance")
             print(f'-- Travelled Distance: {round(self.env.get_edge_distance(edge_path), 2)} m')
 

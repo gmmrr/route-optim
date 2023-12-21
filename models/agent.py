@@ -70,7 +70,7 @@ class rl_agent():
 
                 # check if the route is the shortest distance/time
                 if self.env.evaluation in ("time"):
-                    current_result = self.env.get_edge_time(edge_path + [next_edge])
+                    current_result = self.env.get_edge_time(edge_path + [next_edge]) + self.env.get_tl_offset(edge_path + [next_edge])
                 else:
                     current_result = self.env.get_edge_distance(edge_path + [next_edge])
 
@@ -179,7 +179,7 @@ class rl_agent():
                     print(f'-- Processing Time: {processing_seconds} seconds')
 
                     if self.env.evaluation in ("time"):
-                        print(f'-- Travelled Time: {round(self.env.get_edge_time(self.logs[episode][1])/60, 2)} mins')
+                        print(f'-- Travelled Time: {round((self.env.get_edge_time(self.logs[episode][1])+  self.env.get_tl_offset(self.logs[episode][1]))/60, 2)} mins')
                     else:
                         print(f'-- Travelled Distance: {round(self.env.get_edge_distance(self.logs[episode][1]), 2)} m')
 

@@ -1,4 +1,5 @@
 import os, sys
+import xml.etree.ElementTree as ET
 
 from models import environment
 from models import agent
@@ -15,6 +16,41 @@ def sumo_config():
         sys.exit("please declare environment variable 'SUMO_HOME'")
 
 
+def tls_from_tllxml(file_name):
+    tree = ET.parse(file_name)
+    root = tree.getroot()
+
+    tls_data = {}
+
+    # <tlLogic id="1240618076" type="static" programID="0" offset="0">
+    #     <phase duration="42" state="GGgrrrGGgrrr"/>
+    #     <phase duration="3"  state="yyyrrryyyrrr"/>
+    #     <phase duration="42" state="rrrGGgrrrGGg"/>
+    #     <phase duration="3"  state="rrryyyrrryyy"/>
+    # </tlLogic>
+
+    for tl in root.findall('.//tlLogic'):
+        tl_id = tl.get('id')
+
+        if tl_id not in tls_data:
+            tls_data[tl_id] = {}
+        else:
+            sys.exit(f"Error: {tl_id} duplicated")
+
+        phases = tl.findall('.//phase')
+
+        for phase in phases:
+            duration = phase.get('duration')
+            state = phase.get('state')
+
+            for link_index in range(len(state)):
+                if link_index not in tls_data[tl_id]:
+                    tls_data[tl_id][link_index] = []
+                tls_data[tl_id][link_index] += [state[link_index] for _ in range(int(duration))]
+
+    return tls_data
+
+
 if __name__ == '__main__':
 
     # 01 Setup SUMO
@@ -23,19 +59,16 @@ if __name__ == '__main__':
 
     # 02 Configure network variables
     network_file = './network_files/ncku_network.net.xml'
+    tls = tls_from_tllxml('./network_files/ncku_network.tll.xml')
     congestion = []  # can be defined, but if it is empty, env will randomly decide congested edges
-    traffic_light = [
-        ["1725808117", 240]
-    ]
     start_node = "864831599"
     end_node = "5739293224"
-
 
     # 03 Initiate Environment
     env = environment.traffic_env(
         network_file = network_file,
+        tls = tls,
         congestion = congestion,
-        traffic_light = traffic_light,
         evaluation = "time", # Type: "destination" | "time"
         congestion_level = "low",  # Type: "low" | "medium" | "high", only applied if the congestion is not defined
     )

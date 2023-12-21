@@ -5,14 +5,20 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import random
 
-
 class traffic_env:
-    def __init__ (self, network_file, congestion = [], traffic_light = [], evaluation = "", congestion_level = ""):
+    def __init__ (self, network_file, tls, congestion = [], evaluation = "", congestion_level = ""):
         # 1. Define network_file
         self.network_file = network_file  # read the file
+
         self.net = sumolib.net.readNet(network_file)  # file -> net
         self.nodes = [node.getID().upper() for node in self.net.getNodes()]  # net -> nodes
         self.edges = [edge.getID() for edge in self.net.getEdges()]  # net -> edges
+
+        self.tls = tls
+        self.tls_space = [self.net.getTrafficLights()[i].getID() for i in range(len(self.net.getTrafficLights()))]
+        self.tls_meet = []  # to print on map
+        self.congestion_meet = []  # to print on map
+
         self.action_space = [0, 1, 2, 3]  # action_space
         self.state_space = self.nodes  # state_space
         self.edge_label = self.decode_edges_to_label()  # give every edges a label by their direction in the aspect of x-y coordinate
@@ -26,8 +32,8 @@ class traffic_env:
             for edge in self.congested_edges:  # make sure that all congested_edges are in the net
                 if edge not in self.edges:
                     sys.exit(f'Error: Invalid congestion_edges {edge}')
-            print(f'Traffic Congestion: {list(zip(self.congested_edges, self.congestion_duration))}')
-            print(f'Num of Congested/All Edges: {len(self.congested_edges)}/{len(self.edges)}')
+            print(f'Congested Edges: {list(zip(self.congested_edges, self.congestion_duration))}')
+            print(f'Congested/Total: {len(self.congested_edges)}/{len(self.edges)}')
 
         else:  # if congestion is not defined, then set edges and its duration randomly
             if congestion_level == "low":
@@ -38,24 +44,11 @@ class traffic_env:
                 traffic_level = 0.20  # 20% congested
             self.congested_edges = random.sample(self.edges, round(len(self.edges) * traffic_level))
             self.congestion_duration = [random.randint(60, 120) for _ in range(len(self.congested_edges))]  # 1~2 min
-            print(f'Traffic Congestion: {list(zip(self.congested_edges, self.congestion_duration))}')
-            print(f'Num of Congested/All Edges: {len(self.congested_edges)}/{len(self.edges)}')
+            print(f'Congested Edges: {list(zip(self.congested_edges, self.congestion_duration))}')
+            print(f'Congested/Total: {len(self.congested_edges)}/{len(self.edges)}')
 
 
-        # 3. Define traffic lights nodes, with the original pattern [ (["B", "C"], 5), ...]
-        self.tl_nodes = [item[0] for item in traffic_light]  # ["B", "C"] is a list of nodes. if you meet a traffic light at B, you won't meet another one at C again
-        self.tl_duration = [item[1] for item in traffic_light] # 5 is the duration
-
-        for nodes_lst in self.tl_nodes:  # just to make sure if tl_nodes are defined in the net
-            if isinstance(nodes_lst, str): # if it is "B" rather than ["B", "C"], than make ["B"]
-                nodes_lst = [nodes_lst]
-            for node in nodes_lst:
-                if node not in self.nodes:
-                    sys.exit(f'Error: Invalid traffic_lights node {node}')
-        print(f'Traffic Light: {list(zip(self.tl_nodes, self.tl_duration))}')
-
-
-        # 4. Define evaluation type
+        # 3. Define evaluation type
         if evaluation not in ('distance', 'time'):
             sys.exit('Error: Invalid evaluation type, provide only "distance" or "time"')
         self.evaluation = evaluation
@@ -290,9 +283,7 @@ class traffic_env:
 
         Args:
         - travel_edges: The list of edges of the selected route.
-        - speed: The speed travel (constant) m/s
         - congestion_duration: The time taken for stuck in congestion (in seconds)
-        - traffic_light_duration: The time taken for stuck in traffic light (in seconds)
 
         Return:
         - total_time (float): The total time taken to travel (in seconds)
@@ -308,26 +299,75 @@ class traffic_env:
                 sys.exit(f'Error: Edge {edge} not in Edges Space ...call by get_edge_time')
             # Sum up the distance of each edges
             total_time += self.net.getEdge(edge).getLength() / self.net.getEdge(edge).getSpeed()
-            print(f'...Length: {round(self.net.getEdge(edge).getLength(),2)} m')
-            print(f'...Speed:  {round(self.net.getEdge(edge).getSpeed(), 2)} m/s -> {round(self.net.getEdge(edge).getSpeed()*3.6, 2)} km/h')
-
-
 
         # time punishment for the route
-        for i in range(len(travel_edges)):  # time punishment on a specific edge
-            # congested edges
+        for i in range(len(travel_edges)):  # time punishment on a specific edge because of only congested edges
             if travel_edges[i] in self.congested_edges:
                 total_time += self.congestion_duration[self.congested_edges.index(travel_edges[i])]
 
-            # traffic light
-            prev_node = self.decode_edge_to_node(travel_edges[i-1], direction = 'end') if i > 0 else ""
-            current_node = self.decode_edge_to_node(travel_edges[i], direction = 'end')
-
-            for index, search_nodes in enumerate(self.tl_nodes):
-                if current_node in search_nodes and prev_node not in search_nodes:  # make sure you won't meet continual traffic light
-                    total_time += self.tl_duration[index]
-
         return total_time
+
+
+    # Find the time offset caused by the traffic light
+    def get_tl_offset(self, travel_edges):
+        """
+
+        Args:
+
+        Return:
+        """
+        self.tls_meet = []  # to print on map
+        self.congestion_meet = []  # to print on map
+
+        if isinstance(travel_edges, str):
+            travel_edges = [travel_edges]
+
+        current_time = 0
+        for i in range(len(travel_edges) - 1):
+            current_edge = travel_edges[i]
+            next_edge = travel_edges[i+1]
+
+            # Check if edges are in the edges list
+            if current_edge not in self.edges:
+                sys.exit(f'Error: Edge {current_edge} not in Edges Space ...call by get_tl_offset')
+
+            if current_edge in self.congested_edges and current_edge not in self.congestion_meet:
+                self.congestion_meet.append(current_edge)  # to print on map
+
+            # Sum up the distance of each edges
+            current_time += self.net.getEdge(current_edge).getLength() / self.net.getEdge(current_edge).getSpeed()
+
+            # Find the end point of the edge
+            tl = self.net.getEdge(current_edge).getToNode().getID()
+            if tl not in self.tls_space:
+                continue
+
+            self.tls_meet.append(tl)  # to print on map
+
+            # Find the connection of current_edge to next_edge
+            connections_set = self.net.getTLS(tl).getConnections()
+
+            for j in range(len(connections_set)):
+                connection = connections_set[j]
+                if connection[0] in self.net.getEdge(current_edge).getLanes() and connection[1] in self.net.getEdge(next_edge).getLanes():
+                    break
+
+            # Derive that this connection is the nth link of this tl_node
+            tl_phase = self.tls[tl][connection[2]]
+
+            idle_time = 0
+            if tl_phase[int(current_time) % 90] != "r":
+                continue
+            else:
+                for phase_index in range(90):
+                    if tl_phase[(int(current_time) + phase_index) % 90] != "r":
+                        idle_time = phase_index
+                        break
+
+            # Sum up the idle
+            current_time += idle_time
+
+        return current_time - self.get_edge_time(travel_edges)
 
 
     # ------ Graph Visualisation ------
@@ -374,28 +414,30 @@ class traffic_env:
             route_G, pos, with_labels=False,
             node_color='SeaGreen', node_size=30,
             edge_color='MediumSeaGreen', width=3,
-
             arrows=True, arrowsize=7, arrowstyle='-|>'
         )
 
         # Draw traffic light nodes and congested edges in time evaluation
         if self.evaluation in ("time"):
-            tl_lst = []  # light nodes
-            for tl_node in self.tl_nodes:
-                if isinstance(tl_node, list):
-                    tl_lst.extend(tl_node)
-                else:
-                    tl_lst.append(tl_node)
             nx.draw_networkx_nodes(
                 net_G, pos,
-                nodelist=tl_lst, node_color='Crimson', node_size=30
+                nodelist=self.tls_meet, node_color='Crimson', node_size=30
             )
+
 
             congested_lst = [edges_dict[edge] for edge in self.congested_edges]  # congested edges
             nx.draw_networkx_edges(
                 net_G, pos,
-                edgelist=congested_lst, edge_color='IndianRed', width=3
+                edgelist=congested_lst, edge_color='Gold', width=3
             )
+
+            congestion_meet = [edges_dict[edge] for edge in self.congestion_meet]  # congested edges
+            print(congestion_meet)
+            nx.draw_networkx_edges(
+                net_G, pos,
+                edgelist=congestion_meet, edge_color='IndianRed', width=3
+            )
+
 
         plt.show()
 
@@ -416,7 +458,7 @@ class traffic_env:
         plt.xlabel("Episode")
         if self.evaluation in ("time"):
             plt.ylabel("Time")
-            evaluation = [self.get_edge_time(logs[episode][1]) for episode in range(num_episodes)]
+            evaluation = [(self.get_edge_time(logs[episode][1]) + self.get_tl_offset(logs[episode][1])) for episode in range(num_episodes)]
         else:
             plt.ylabel("Distance")
             evaluation = [self.get_edge_distance(logs[episode][1]) for episode in range(num_episodes)]
