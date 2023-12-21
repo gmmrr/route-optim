@@ -13,14 +13,15 @@ class traffic_env:
         self.net = sumolib.net.readNet(network_file)  # file -> net
         self.nodes = [node.getID().upper() for node in self.net.getNodes()]  # net -> nodes
         self.edges = [edge.getID() for edge in self.net.getEdges()]  # net -> edges
-        self.action_space = [i for i in range(100)]  # action_space
+        self.action_space = [0, 1, 2, 3]  # action_space
         self.state_space = self.nodes  # state_space
         self.edge_label = self.decode_edges_to_label()  # give every edges a label by their direction in the aspect of x-y coordinate
 
-        # 2. Define congestions edges with its original pattern [("gneF_I", 10), ...]
+
+        # 2. Define congestions edges with its original pattern
         if congestion:  # if congestion is defined
-            self.congested_edges = [item[0] for item in congestion]  # "gneF_I" is an edge, where "gne" stands for "generic edge". It means from F to I for example
-            self.congestion_duration = [item[1] for item in congestion]  # 10 is the duration of so called "traffic jam"
+            self.congested_edges = [item[0] for item in congestion]
+            self.congestion_duration = [item[1] for item in congestion]  # the duration of so called "traffic jam"
 
             for edge in self.congested_edges:  # make sure that all congested_edges are in the net
                 if edge not in self.edges:
@@ -40,6 +41,7 @@ class traffic_env:
             print(f'Traffic Congestion: {list(zip(self.congested_edges, self.congestion_duration))}')
             print(f'Num of Congested/All Edges: {len(self.congested_edges)}/{len(self.edges)}')
 
+
         # 3. Define traffic lights nodes, with the original pattern [ (["B", "C"], 5), ...]
         self.tl_nodes = [item[0] for item in traffic_light]  # ["B", "C"] is a list of nodes. if you meet a traffic light at B, you won't meet another one at C again
         self.tl_duration = [item[1] for item in traffic_light] # 5 is the duration
@@ -51,6 +53,7 @@ class traffic_env:
                 if node not in self.nodes:
                     sys.exit(f'Error: Invalid traffic_lights node {node}')
         print(f'Traffic Light: {list(zip(self.tl_nodes, self.tl_duration))}')
+
 
         # 4. Define evaluation type
         if evaluation not in ('distance', 'time'):
@@ -289,8 +292,8 @@ class traffic_env:
         - travel_edges: The list of edges of the selected route.
         - speed: The speed travel (constant) m/s
         - congestion_duration: The time taken for stuck in congestion (in seconds)
-
         - traffic_light_duration: The time taken for stuck in traffic light (in seconds)
+
         Return:
         - total_time (float): The total time taken to travel (in seconds)
         """
@@ -302,7 +305,7 @@ class traffic_env:
         for edge in travel_edges:
             # Check if edges are in the edges list
             if edge not in self.edges:
-                sys.exit(f'Error: Edge {edge} not in Edges Space ...call by get_edge_distance')
+                sys.exit(f'Error: Edge {edge} not in Edges Space ...call by get_edge_time')
             # Sum up the distance of each edges
             total_time += self.net.getEdge(edge).getLength() / self.net.getEdge(edge).getSpeed()
             print(f'...Length: {round(self.net.getEdge(edge).getLength(),2)} m')
