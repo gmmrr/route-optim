@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 from models import environment
 from models import agent
 from models import dijkstra
+from models import demand
 
 def sumo_config():
     # os.environ["SUMO_HOME"] = '$SUMO_HOME' # -- change to your path to $SUMO_HOME if necessary
@@ -101,17 +102,28 @@ if __name__ == '__main__':
     # -------------------
     # Q_Learning Algorithm
     # -------------------
-    # print(f"\nQ_Learning Algorithm{'.' * 100}")
-    # QLearning_agent = agent.Q_Learning(env, start_node, end_node)
-    # node_path, edge_path, episode, logs = QLearning_agent.train(5000, 5)  # limit of episodes, threshold to converge
-    # env.plot_performance(episode, logs)
-    # env.plot_visualised_result(edge_path)
+    print(f"\nQ_Learning Algorithm{'.' * 100}")
+    QLearning_agent = agent.Q_Learning(env, start_node, end_node)
+    node_path, edge_path, episode, logs = QLearning_agent.train(5000, 5)  # limit of episodes, threshold to converge
+    env.plot_performance(episode, logs)
+    env.plot_visualised_result(edge_path)
 
     # -------------------
     # SARSA Algorithm
     # -------------------
-    print(f"\nSARSA Algorithm{'.' * 100}")
-    SARSA_agent = agent.SARSA(env, start_node, end_node)
-    node_path, edge_path, episode, logs = SARSA_agent.train(5000, 20)  # limit of episodes, threshold to converge
-    env.plot_performance(episode, logs)
-    env.plot_visualised_result(edge_path)
+    # print(f"\nSARSA Algorithm{'.' * 100}")
+    # SARSA_agent = agent.SARSA(env, start_node, end_node)
+    # node_path, edge_path, episode, logs = SARSA_agent.train(5000, 20)  # limit of episodes, threshold to converge
+    # env.plot_performance(episode, logs)
+    # env.plot_visualised_result(edge_path)
+
+
+    num_vehicle = 200
+
+    predicted_demand = demand.Demand()
+    start_node = predicted_demand.predict_start_node(num_vehicle)
+    end_node = predicted_demand.predict_end_node(num_vehicle)
+
+    vehicle_agent = []
+    for v_index in range(num_vehicle):
+        vehicle_agent.append(agent.Q_Learning(env, start_node[v_index], end_node[v_index]))

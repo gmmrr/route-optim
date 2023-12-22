@@ -25,6 +25,7 @@ class Dijkstra:
 
     # main function in dijkstra
     def search(self):
+        print('Search Start...')
         start_time = datetime.datetime.now()
 
         self.reset()  # the initial state of the algorithm
@@ -70,8 +71,8 @@ class Dijkstra:
 
         # --- results output ---
         print('Search Completed...\n')
-        print(f'-- States: {node_path}')
-        print(f'-- Edges: {edge_path}')  # states is nodes actually
+        print(f'-- States: {node_path}\n')
+        print(f'-- Edges: {edge_path}\n')  # states is nodes actually
         print(f'-- Processing Time: {processing_seconds} seconds')
 
         if self.env.evaluation in ("time"):

@@ -67,3 +67,5 @@ env.visualise_plot(edge_path)
 env.plot_performance(number_of_episode, logs)
 ```
 
+
+RL的終止條件是如果5次次數一樣

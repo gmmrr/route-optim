@@ -2,16 +2,30 @@ import numpy as np
 import sys
 import datetime
 
+def print_progress_bar(iteration, limit):
+    fill='█'
+    length = 50
+    prefix = 'Episodes: '
+    suffix = '(limit: ' + str(limit) + ')'
+
+    percent = ("{0:.1f}").format(100 * (iteration / float(limit)))
+    filled_length = int(length * iteration // limit)
+    bar = fill * filled_length + '-' * (length - filled_length)
+    sys.stdout.write(f'\r{prefix} |{bar}| {percent}% {suffix}', )
+    sys.stdout.flush()
+
 
 class rl_agent():
-    def __init__ (self, env, start_node, end_node, learning_rate, discount_factor):
+    def __init__ (self, env, start_node, end_node, learning_rate, discount_factor, reward_lst):
         # Define the learning parameters
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
+        self.reward_lst = reward_lst
 
         # Initialise environment
         self.env = env
         self.env.set_start_end(start_node, end_node)  # let the env knows where are the start and end nodes
+
 
 
     # Reset agent
@@ -34,18 +48,12 @@ class rl_agent():
         outgoing_edges = self.env.decode_node_to_edges(current_state, direction = 'outgoing')
 
         # 1. Determine reward paramaters
-        # -------------------
-        # START OF EDIT
-        # -------------------
-        invalid_action_reward = -50
-        dead_end_reward = -50
-        loop_reward = -30  # = -50
-        completion_reward = 50
-        bonus_reward = 50  # = ((self.best_result-current_result)/self.best_result)*100 + 50
-        continue_reward = 0
-        # -------------------
-        # END OF EDIT
-        # -------------------
+        invalid_action_reward = self.reward_lst[0]
+        dead_end_reward = self.reward_lst[1]
+        loop_reward = self.reward_lst[2]
+        completion_reward = self.reward_lst[3]
+        bonus_reward = self.reward_lst[4]  # = ((self.best_result-current_result)/self.best_result)*100 + 50
+        continue_reward = self.reward_lst[5]
 
         # Define the reward
         reward = continue_reward
@@ -127,12 +135,16 @@ class rl_agent():
 
     # Main function implemented
     def train(self, num_episodes, threshold):
+        print('Training Start...')
         start_time = datetime.datetime.now() # record the start time
         self.reset()  # initialise agent
-        print('Training Start...')
+
 
         # Iterate through episodes
         for episode in range(num_episodes):
+
+            print_progress_bar(episode, num_episodes)
+
             # Initialise state
             node_path = [self.env.start_node]
             edge_path = []
@@ -164,41 +176,91 @@ class rl_agent():
             # Deal with convergence: > threshold to make same results for needed times, and make sure reach the end node
             if episode > threshold and self.logs[episode][0][-1] == self.env.end_node:
 
-                # Convergence when 5 same routes produced consecutively
-                threshold_lst = list(self.logs.values())[-threshold:]
+                # Convergence when time taken in 5 episodes is consistent
+                threshold_lst = []
+                for i in range(threshold):
+                    threshold_lst.append(round(self.env.get_edge_time(self.logs[episode-i][1]) + self.env.get_tl_offset(self.logs[episode-i][1]), 2))
+
                 if all(x == threshold_lst[0] for x in threshold_lst):
                     end_time = datetime.datetime.now()  # record ending time
                     time_difference = end_time - start_time
                     processing_seconds = time_difference.total_seconds()
 
                     # --- results output ---
-                    print('Training Completed...\n')
-                    print(f'-- Last Episode: {episode}')
-                    print(f'-- States: {self.logs[episode][0]}')
-                    print(f'-- Edges: {self.logs[episode][1]}')
+                    print('\nTraining Completed...\n')
+                    print(f'-- Last Episode: {episode}\n')
+                    print(f'-- States: {self.logs[episode][0]}\n')
+                    print(f'-- Edges: {self.logs[episode][1]}\n')
                     print(f'-- Processing Time: {processing_seconds} seconds')
 
                     if self.env.evaluation in ("time"):
-                        print(f'-- Travelled Time: {round((self.env.get_edge_time(self.logs[episode][1])+  self.env.get_tl_offset(self.logs[episode][1]))/60, 2)} mins')
+                        print(f'-- Travelled Time: {round((self.env.get_edge_time(self.logs[episode][1]) + self.env.get_tl_offset(self.logs[episode][1]))/60, 2)} mins')
                     else:
                         print(f'-- Travelled Distance: {round(self.env.get_edge_distance(self.logs[episode][1]), 2)} m')
 
                     return self.logs[episode][0], self.logs[episode][1], episode, self.logs
 
+                elif round((self.env.get_edge_time(self.logs[episode][1]) + self.env.get_tl_offset(self.logs[episode][1]))/60, 2) < 1:
+                    end_time = datetime.datetime.now()  # record ending time
+                    time_difference = end_time - start_time
+                    processing_seconds = time_difference.total_seconds()
+
+                    # --- results output ---
+                    print('\nTraining Completed...\n')
+                    print(f'-- Last Episode: {episode}\n')
+                    print(f'-- States: {self.logs[episode][0]}\n')
+                    print(f'-- Edges: {self.logs[episode][1]}\n')
+                    print(f'-- Processing Time: {processing_seconds} seconds')
+
+                    if self.env.evaluation in ("time"):
+                        print(f'-- Travelled Time: {round((self.env.get_edge_time(self.logs[episode][1]) + self.env.get_tl_offset(self.logs[episode][1]))/60, 2)} mins')
+                    else:
+                        print(f'-- Travelled Distance: {round(self.env.get_edge_distance(self.logs[episode][1]), 2)} m')
+
+                    return self.logs[episode][0], self.logs[episode][1], episode, self.logs
+
+
+
             # Deal with the case that it is unable to converge
             if episode+1 == num_episodes:
-                print('Training Completed...\n')
+                print('\nTraining Completed...\n')
                 end_time = datetime.datetime.now()
                 time_difference = end_time - start_time
                 processing_seconds = time_difference.total_seconds()
                 print(f'-- Processing Time: {processing_seconds} seconds')
+                self.env.plot_performance(episode, self.logs)  # still print the plot_performance even if not converge
                 sys.exit(f'Cannot find shortest route within {num_episodes} episodes')
 
 
 class Q_Learning(rl_agent):
-    def __init__ (self, env, start_node, end_node, learning_rate = 0.9, discount_factor = 0.1):
-        super().__init__(env, start_node, end_node, learning_rate, discount_factor)  # inherit from parent class
+    def __init__ (self, env, start_node, end_node):
 
+        # --------------------------
+        # Hyperparameters
+        # --------------------------
+        learning_rate = 0.9  # alpha
+        discount_factor = 0.1  # gamma
+        reward_lst = [-50, -50, -30, 50, 50, 0]
+        # --------------------------
+        #
+        # --------------------------
+
+        """
+        Algorithm Hyperparameters:
+        - learning_rate (float):
+        - discount_factor (float):
+            Q(S,a) = Q(S,a) + alpha * (R + gamma * max(Q(S',a') - Q(S,a))
+        - reward_lst (list [6])
+            0. invalid_action_reward: action not allowed -50
+            1. dead_end_reward: meet a dead end -50
+            2. loop_reward: cause a loop -30
+            3. completion_reward 50
+            4. bonus_reward: is the shortest one so far 50
+            5. continue_reward: make agent be aggresive on go straight 0
+        """
+
+
+        super().__init__(env, start_node, end_node, learning_rate, discount_factor, reward_lst)
 
     def act(self, state):
         # Choose action with highest Q-value
@@ -208,10 +270,21 @@ class Q_Learning(rl_agent):
 
 
 class SARSA(rl_agent):
-    def __init__ (self, env, start_node, end_node, learning_rate = 0.9, discount_factor = 0.1, exploration_rate = 0.1):
-        super().__init__(env, start_node, end_node, learning_rate, discount_factor)  # inherit from parent class
+    def __init__ (self, env, start_node, end_node):
 
-        self.exploration_rate = exploration_rate  # Define additional parameter
+        # --------------------------
+        # Hyperparameters
+        # --------------------------
+        learning_rate = 0.9  # alpha
+        discount_factor = 0.1  # gamma
+        exploration_rate = 0.05  # ratio of exploration and exploitation
+        reward_lst = [-100, -100, -100, 10, 100, -1]  # similar to Q_Learning one
+        # --------------------------
+        #
+        # --------------------------
+
+        super().__init__(env, start_node, end_node, learning_rate, discount_factor, reward_lst)
+        self.exploration_rate = exploration_rate
 
 
     def act(self, state):
