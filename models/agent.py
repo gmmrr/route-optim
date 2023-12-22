@@ -200,26 +200,6 @@ class rl_agent():
 
                     return self.logs[episode][0], self.logs[episode][1], episode, self.logs
 
-                elif round((self.env.get_edge_time(self.logs[episode][1]) + self.env.get_tl_offset(self.logs[episode][1]))/60, 2) < 1:
-                    end_time = datetime.datetime.now()  # record ending time
-                    time_difference = end_time - start_time
-                    processing_seconds = time_difference.total_seconds()
-
-                    # --- results output ---
-                    print('\nTraining Completed...\n')
-                    print(f'-- Last Episode: {episode}\n')
-                    print(f'-- States: {self.logs[episode][0]}\n')
-                    print(f'-- Edges: {self.logs[episode][1]}\n')
-                    print(f'-- Processing Time: {processing_seconds} seconds')
-
-                    if self.env.evaluation in ("time"):
-                        print(f'-- Travelled Time: {round((self.env.get_edge_time(self.logs[episode][1]) + self.env.get_tl_offset(self.logs[episode][1]))/60, 2)} mins')
-                    else:
-                        print(f'-- Travelled Distance: {round(self.env.get_edge_distance(self.logs[episode][1]), 2)} m')
-
-                    return self.logs[episode][0], self.logs[episode][1], episode, self.logs
-
-
 
             # Deal with the case that it is unable to converge
             if episode+1 == num_episodes:
@@ -251,12 +231,12 @@ class Q_Learning(rl_agent):
         - discount_factor (float):
             Q(S,a) = Q(S,a) + alpha * (R + gamma * max(Q(S',a') - Q(S,a))
         - reward_lst (list [6])
-            0. invalid_action_reward: action not allowed -50
-            1. dead_end_reward: meet a dead end -50
-            2. loop_reward: cause a loop -30
-            3. completion_reward 50
-            4. bonus_reward: is the shortest one so far 50
-            5. continue_reward: make agent be aggresive on go straight 0
+            0. invalid_action_reward: action not allowed, default -50
+            1. dead_end_reward: meet a dead end, default -50
+            2. loop_reward: cause a loop, default -30
+            3. completion_reward, defualt 50
+            4. bonus_reward: is the shortest one so far, default 50
+            5. continue_reward: make agent be aggresive on go straight, defualt 0
         """
 
 
@@ -277,8 +257,8 @@ class SARSA(rl_agent):
         # --------------------------
         learning_rate = 0.9  # alpha
         discount_factor = 0.1  # gamma
-        exploration_rate = 0.05  # ratio of exploration and exploitation
-        reward_lst = [-100, -100, -100, 10, 100, -1]  # similar to Q_Learning one
+        exploration_rate = 0.005  # ratio of exploration and exploitation
+        reward_lst = [-50, -50, -30, 50, 100, 0]  # similar to Q_Learning one
         # --------------------------
         #
         # --------------------------
