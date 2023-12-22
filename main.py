@@ -93,19 +93,19 @@ if __name__ == '__main__':
     # -------------------
     # Dijkstra Algorithm
     # -------------------
-    # print(f"\nDijkstra Algorithm{'.' * 100}")
-    # Dijkstra = dijkstra.Dijkstra(env, start_node, end_node)
-    # node_path, edge_path = Dijkstra.search()
-    # env.plot_visualised_result(edge_path)
+    print(f"\nDijkstra Algorithm{'.' * 100}")
+    Dijkstra = dijkstra.Dijkstra(env, start_node, end_node)
+    node_path, edge_path = Dijkstra.search()
+    env.plot_visualised_result(edge_path)
 
     # -------------------
     # Q_Learning Algorithm
     # -------------------
-    # print(f"\nQ_Learning Algorithm{'.' * 100}")
-    # QLearning_agent = agent.Q_Learning(env, start_node, end_node)
-    # node_path, edge_path, episode, logs = QLearning_agent.train(5000, 5)  # limit of episodes, threshold to converge
-    # env.plot_performance(episode, logs)
-    # env.plot_visualised_result(edge_path)
+    print(f"\nQ_Learning Algorithm{'.' * 100}")
+    QLearning_agent = agent.Q_Learning(env, start_node, end_node)
+    node_path, edge_path, episode, logs = QLearning_agent.train(5000, 5)  # limit of episodes, threshold to converge
+    env.plot_performance(episode, logs)
+    env.plot_visualised_result(edge_path)
 
     # -------------------
     # SARSA Algorithm
