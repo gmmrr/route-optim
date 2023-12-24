@@ -6,21 +6,23 @@
 ## Description
 This project aims to solve the route optimisation problem of individual vehicle by reinforcement learning.<br>
 
-Giving a set of start terminal and end terminal, it can assign a particular vehicle to deal with it intuitively, and it will follow the route computed by RL.<br>
+Giving a set of start terminal and end terminal, a vehicle will follow the route computed by RL.<br>
 
 For multiple vehicles and demands case, <a href="https://github.com/gmmrr/fleet-route-optim">gmmrr/fleet-route-optim<a/>  is another version aims to deal with vehicles in fleet.<br>
 
 This repo is part of Guanming's capstone project.
 
 ## Result
+
 ### Dijkstra Algorithm
+It is executed as a reference.
 <img width="500" alt="Screenshot 2023-12-24 at 22 15 56" src="https://github.com/gmmrr/route-optim/assets/88712124/254ea7c8-cd59-43da-8852-9644f2310d37">
 
 ```
 Processing Time: 0.09724 seconds
 Travelled Time: 6.15 mins
 ```
-It is executed as a reference.
+
 
 ### Q Learning Algorithm
 <img width="500" alt="Screenshot 2023-12-24 at 22 17 12" src="https://github.com/gmmrr/route-optim/assets/88712124/fe94d8b1-d7aa-4634-acea-c739f13b23ff">
@@ -34,21 +36,23 @@ Travelled Time: 6.67 mins
 
 
 ### SARSA Algorithm
+Similar to Q Learning, but we trigger exploration in a given exploration_rate.<br>
+As in the graph, bumps are caused by those exploration.<br>
 <img width="500" alt="Screenshot 2023-12-24 at 22 22 46" src="https://github.com/gmmrr/route-optim/assets/88712124/04b7ad25-2218-4a7b-892a-8b0ad22a2af5">
 <img width="500" alt="Screenshot 2023-12-24 at 22 23 37" src="https://github.com/gmmrr/route-optim/assets/88712124/7d20d602-06a7-46de-9dbd-642e82c9db3a">
-
 
 ```
 Last Episode: 465
 Processing Time: 161.478861 seconds
 Travelled Time: 6.65 mins
 ```
-Similar to Q Learning, but we trigger exploration in a given exploration_rate.<br>
 
-Obviously, outcomes of both Q Learning and SARSA are slightly worse than the classic Dijkstra algorithm.<br>
-If the map is well informed, Dijkstra is one of the best with its highly effective performance.<br>
-However, the advantage of reinforcement learning is that the information of the map is not given.<br>
-It is quite close of Q learning and SARSA in this case.<br>
+
+Obviously, outcomes of both Q Learning and SARSA are slightly worse than the classic Dijkstra algorithm.
+If the map is well informed, Dijkstra is one of the best with its highly effective performance.
+Though the map in this project is not infinitely extended because of the limit of node amount by OSM, they are close enough.
+The result of SARSA is slightly better than Q Learning counterpart as well.
+It indicates the benefit of the policy that SARSA take.
 
 
 
