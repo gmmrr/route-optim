@@ -13,31 +13,42 @@ For multiple vehicles and demands case, <a href="https://github.com/gmmrr/fleet-
 This repo is part of Guanming's capstone project.
 
 ## Result
-<img width="764" alt="Screenshot 2023-12-24 at 22 15 56" src="https://github.com/gmmrr/route-optim/assets/88712124/254ea7c8-cd59-43da-8852-9644f2310d37">
+### Dijkstra Algorithm
+<img width="500" alt="Screenshot 2023-12-24 at 22 15 56" src="https://github.com/gmmrr/route-optim/assets/88712124/254ea7c8-cd59-43da-8852-9644f2310d37">
 
 ```
 Processing Time: 0.09724 seconds
 Travelled Time: 6.15 mins
 ```
+It is executed as a reference.
 
-<img width="637" alt="Screenshot 2023-12-24 at 22 17 12" src="https://github.com/gmmrr/route-optim/assets/88712124/fe94d8b1-d7aa-4634-acea-c739f13b23ff">
-<img width="764" alt="Screenshot 2023-12-24 at 22 18 03" src="https://github.com/gmmrr/route-optim/assets/88712124/1701dcbb-8077-4cc1-975c-46dd5f7bc313">
+### Q Learning Algorithm
+<img width="500" alt="Screenshot 2023-12-24 at 22 17 12" src="https://github.com/gmmrr/route-optim/assets/88712124/fe94d8b1-d7aa-4634-acea-c739f13b23ff">
+<img width="500" alt="Screenshot 2023-12-24 at 22 18 03" src="https://github.com/gmmrr/route-optim/assets/88712124/1701dcbb-8077-4cc1-975c-46dd5f7bc313">
 
 ```
+Last Episode: 120
 Processing Time: 42.869093 seconds
 Travelled Time: 6.67 mins
 ```
 
-<img width="638" alt="Screenshot 2023-12-24 at 22 22 46" src="https://github.com/gmmrr/route-optim/assets/88712124/04b7ad25-2218-4a7b-892a-8b0ad22a2af5">
-<img width="763" alt="Screenshot 2023-12-24 at 22 23 37" src="https://github.com/gmmrr/route-optim/assets/88712124/7d20d602-06a7-46de-9dbd-642e82c9db3a">
+
+### SARSA Algorithm
+<img width="500" alt="Screenshot 2023-12-24 at 22 22 46" src="https://github.com/gmmrr/route-optim/assets/88712124/04b7ad25-2218-4a7b-892a-8b0ad22a2af5">
+<img width="500" alt="Screenshot 2023-12-24 at 22 23 37" src="https://github.com/gmmrr/route-optim/assets/88712124/7d20d602-06a7-46de-9dbd-642e82c9db3a">
 
 
 ```
+Last Episode: 465
 Processing Time: 161.478861 seconds
 Travelled Time: 6.65 mins
 ```
+Similar to Q Learning, but we trigger exploration in a given exploration_rate.<br>
 
-
+Obviously, outcomes of both Q Learning and SARSA are slightly worse than the classic Dijkstra algorithm.<br>
+If the map is well informed, Dijkstra is one of the best with its highly effective performance.<br>
+However, the advantage of reinforcement learning is that the information of the map is not given.<br>
+It is quite close of Q learning and SARSA in this case.<br>
 
 
 
