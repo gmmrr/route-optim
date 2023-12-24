@@ -15,7 +15,7 @@ This repo is part of Guanming's capstone project.
 ## Result
 
 ### Dijkstra Algorithm
-It is executed as a reference.
+It is executed as a reference.<br>
 <img width="500" alt="Screenshot 2023-12-24 at 22 15 56" src="https://github.com/gmmrr/route-optim/assets/88712124/254ea7c8-cd59-43da-8852-9644f2310d37">
 
 ```
@@ -37,7 +37,7 @@ Travelled Time: 6.67 mins
 
 ### SARSA Algorithm
 Similar to Q Learning, but we trigger exploration in a given exploration_rate.<br>
-As in the graph, bumps are caused by those exploration.<br>
+As in the graph, bumps are caused by those explorations.<br>
 <img width="500" alt="Screenshot 2023-12-24 at 22 22 46" src="https://github.com/gmmrr/route-optim/assets/88712124/04b7ad25-2218-4a7b-892a-8b0ad22a2af5">
 <img width="500" alt="Screenshot 2023-12-24 at 22 23 37" src="https://github.com/gmmrr/route-optim/assets/88712124/7d20d602-06a7-46de-9dbd-642e82c9db3a">
 
@@ -116,10 +116,10 @@ discount_factor = 0.1  # gamma
 # Hyperparameters for SARSA
 learning_rate = 0.9  # alpha
 discount_factor = 0.1  # gamma
-exploration_rate = 0.05  # ratio of exploration and exploitation
+exploration_rate = 0.1  # ratio of exploration and exploitation
 ```
 and we have
 ```python
-reward_lst = [-100, -100, -100, 10, 100, -1]
+reward_lst = [-50, -50, -30, 100, 50, -1]
 ```
 They are defined as ```[invalid_action_reward, dead_end_reward, loop_reward, completion_reward, bonus_reward, continue_reward]``` respectively.
