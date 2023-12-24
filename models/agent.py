@@ -257,8 +257,8 @@ class SARSA(rl_agent):
         # --------------------------
         learning_rate = 0.9  # alpha
         discount_factor = 0.1  # gamma
-        exploration_rate = 0.005  # ratio of exploration and exploitation
-        reward_lst = [-50, -50, -30, 50, 100, 0]  # similar to Q_Learning one
+        exploration_rate = 0.1  # ratio of exploration and exploitation
+        reward_lst = [-50, -50, -30, 50, 50, 0]  # similar to Q_Learning one
         # --------------------------
         #
         # --------------------------
